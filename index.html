@@ -212,8 +212,8 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     </div>
     <div class="list" id="list"></div>
     <div class="empty" id="empty" hidden>
-      <p>dist 目录里还没有文件</p>
-      <p class="sub">把文件放进本站 <code>dist/</code> 目录，刷新即可</p>
+      <p>列表里还没有文件</p>
+      <p class="sub">把文件放进 <code>dist/</code>，再把文件名写进 <code>files.json</code></p>
     </div>
     <div class="empty" id="fail" hidden>
       <p id="failTitle">读取 dist 目录失败</p>
@@ -301,27 +301,48 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
       .catch(function () { return 0; });
   }
 
-  function fillSizes(files) {
+  function fillSizes(files, skipKnown) {
+    var queue = files.filter(function (f) {
+      if (f.url) return false;
+      return skipKnown ? !(f.size > 0) : true;
+    });
     var cursor = 0;
     function worker() {
-      if (cursor >= files.length) return Promise.resolve();
-      var f = files[cursor++];
+      if (cursor >= queue.length) return Promise.resolve();
+      var f = queue[cursor++];
       return headSize(f.name).then(function (s) {
-        f.size = s;
+        f.size = s || f.size;
         return worker();
       });
     }
     var lanes = [];
-    var n = Math.min(6, files.length);
+    var n = Math.min(6, queue.length);
     for (var i = 0; i < n; i++) lanes.push(worker());
     return Promise.all(lanes);
   }
 
-  // links.json 可选：挂在别处的大文件用外链补进来，与目录内文件重名时以实际文件为准
-  function loadLinks() {
-    return fetch('links.json', { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .catch(function () { return []; });
+  // 文件清单：不提供目录列表的托管（Vercel 等）靠它拿文件名
+  function loadManifest() {
+    return fetch('files.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!Array.isArray(data)) return null;
+        var seen = Object.create(null);
+        var files = [];
+        data.forEach(function (it) {
+          if (!it || typeof it.name !== 'string') return;
+          var name = it.name.trim();
+          if (!name || name.charAt(0) === '.' || seen[name]) return;
+          seen[name] = 1;
+          files.push({
+            name: name,
+            size: Number(it.size) || 0,
+            url: typeof it.url === 'string' ? it.url.trim() : ''
+          });
+        });
+        return files;
+      })
+      .catch(function () { return null; });
   }
 
   function safeHref(f) {
@@ -393,46 +414,47 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     });
   }
 
-  function applyFiles(files) {
-    return loadLinks().then(function (links) {
-      var names = Object.create(null);
-      files.forEach(function (f) { names[f.name] = 1; });
-      (Array.isArray(links) ? links : []).forEach(function (l) {
-        if (!l || !l.name || !l.url || names[l.name]) return;
-        names[l.name] = 1;
-        files.push({ name: String(l.name), size: Number(l.size) || 0, url: String(l.url) });
-      });
-      files.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh'); });
-      render(files);
-    });
-  }
-
   function load() {
     setStatus('', '读取中');
 
-    fetch(DIR + '/', { cache: 'no-store', headers: { Accept: 'text/html' } })
-      .then(function (r) {
-        if (r.ok) return r;
-        if (r.status === 404) throw new Error('找不到 ' + DIR + '/ 目录');
-        throw new Error('HTTP ' + r.status);
-      })
-      .then(function (r) {
-        var type = r.headers.get('Content-Type') || '';
-        if (type.indexOf('text/html') < 0) throw new Error('目录返回的不是列表页');
-        return r.text();
-      })
-      .then(function (html) {
-        if (!/<a[\s>]/i.test(html)) throw new Error('当前静态服务不提供目录列表');
-        var files = parseListing(html);
-        return fillSizes(files).then(function () { return files; });
-      })
-      .then(applyFiles)
-      .then(function () {
-        setStatus('ok', DIR + '/');
+    loadManifest()
+      .then(function (list) {
+        if (list) {
+          if (!list.length) {
+            render(list);
+            setStatus('ok', 'files.json');
+            return;
+          }
+          return fillSizes(list, true).then(function () {
+            list.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh'); });
+            render(list);
+            setStatus('ok', 'files.json');
+          });
+        }
+
+        return fetch(DIR + '/', { cache: 'no-store', headers: { Accept: 'text/html' } })
+          .then(function (r) {
+            if (r.ok) return r;
+            if (r.status === 404) throw new Error('没有 files.json，' + DIR + '/ 也打不开');
+            throw new Error('HTTP ' + r.status);
+          })
+          .then(function (r) {
+            var type = r.headers.get('Content-Type') || '';
+            if (type.indexOf('text/html') < 0) throw new Error('没有 files.json，' + DIR + '/ 返回的不是列表页');
+            return r.text();
+          })
+          .then(function (html) {
+            if (!/<a[\s>]/i.test(html)) throw new Error('没有 files.json，当前静态服务也不提供目录列表');
+            var files = parseListing(html);
+            return fillSizes(files, false).then(function () {
+              render(files);
+              setStatus('ok', DIR + '/');
+            });
+          });
       })
       .catch(function (e) {
         setStatus('err', '读取失败');
-        showFail('读取 ' + DIR + '/ 目录失败', e.message);
+        showFail('读取文件列表失败', e.message + '；把清单写进 files.json 再刷新');
       });
   }
 
