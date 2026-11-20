@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#05080d" />
-<title>局域文件分发系统 · LFDS</title>
+<title>文件分发系统 · LFDS</title>
 <style>
 :root{
   --bg:#05080d;
@@ -82,8 +82,6 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   font-size:19px;font-weight:600;color:var(--txt);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.kpi.wide{grid-column:1 / -1}
-.kpi.wide strong{font-size:13.5px;color:var(--accent);font-weight:500}
 
 /* ---------- panel / list ---------- */
 .panel{
@@ -156,22 +154,6 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   .kpis{grid-template-columns:1fr 1fr}
 }
 
-/* ---------- 连接仓库（无需配置文件，推断不出时手输一次） ---------- */
-.setup-body{padding:16px}
-.setup-hint{margin:0 0 12px;font-size:13px;color:var(--dim-2);line-height:1.6}
-.setup-hint code{font-family:var(--mono);font-size:12.5px;color:var(--accent)}
-.setup-row{display:flex;gap:10px}
-.setup-row input{
-  flex:1;min-width:0;appearance:none;
-  background:#070b11;color:var(--txt);
-  border:1px solid var(--line-2);border-radius:8px;
-  font-family:var(--mono);font-size:14px;padding:9px 12px;
-  outline:none;transition:border-color .15s,box-shadow .15s;
-}
-.setup-row input:focus{border-color:rgba(47,212,232,.55);box-shadow:0 0 0 3px rgba(47,212,232,.10)}
-.setup-row .btn{padding:9px 18px;font-size:13px;color:var(--accent);border-color:rgba(47,212,232,.32);background:var(--accent-soft);white-space:nowrap}
-.setup-err{margin:10px 0 0;font-size:12.5px;color:#ff8a8a}
-@media (min-width:900px){.setup-hint{font-size:13.5px}.setup-row input{font-size:15px}}
 .empty{padding:46px 20px;text-align:center}
 .empty p{margin:0;font-size:14px;color:var(--dim)}
 .empty .sub{margin-top:6px;font-size:12.5px;color:var(--dim-2)}
@@ -189,11 +171,9 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   .shell{padding:34px 26px 46px}
   .brand p{font-size:12.5px;color:#93a8bd}
   .status{font-size:13px;color:#b6c8da}
-  .kpis{grid-template-columns:1fr 1fr 1.7fr}
-  .kpi.wide{grid-column:auto}
+  .kpis{grid-template-columns:1fr 1fr}
   .kpi .k{font-size:13px;color:#93a8bd}
   .kpi strong{font-size:22px}
-  .kpi.wide strong{font-size:14.5px}
   .p-hd h2{font-size:15px}
   .btn{font-size:13.5px}
   .row{grid-template-columns:52px minmax(0,1fr) 246px 96px;padding:15px 20px}
@@ -213,7 +193,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     <div class="brand">
       <div class="logo">↓</div>
       <div>
-        <h1>局域文件分发系统</h1>
+        <h1>文件分发系统</h1>
         <p>LFDS · Static Host</p>
       </div>
     </div>
@@ -223,23 +203,9 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   <section class="kpis">
     <div class="kpi"><span class="k">文件数</span><strong id="kCount">—</strong></div>
     <div class="kpi"><span class="k">总大小</span><strong id="kSize">—</strong></div>
-    <div class="kpi wide"><span class="k">仓库</span><strong id="kRepo">—</strong></div>
   </section>
 
-  <section class="panel" id="setup" hidden>
-    <div class="p-hd">
-      <h2>连接仓库</h2>
-    </div>
-    <div class="setup-body">
-      <p class="setup-hint">填入公开仓库的 <code>owner/repo</code>，带分支写 <code>owner/repo@分支</code>，也可以直接粘仓库网址。连上后这台设备会记住，不用再填。</p>
-      <div class="setup-row">
-        <input id="repoInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
-        <button class="btn" id="repoSave" type="button">连接</button>
-      </div>
-      <p class="setup-err" id="repoErr" hidden></p>
-    </div>
-  </section>
-  <section class="panel" id="files" hidden>
+  <section class="panel" id="files">
     <div class="p-hd">
       <h2>可下载文件</h2>
       <button class="btn" id="reload" type="button">刷新列表</button>
@@ -247,7 +213,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     <div class="list" id="list"></div>
     <div class="empty" id="empty" hidden>
       <p>dist 目录里还没有文件</p>
-      <p class="sub">把文件放进仓库的 <code>dist/</code> 目录，push 后刷新即可</p>
+      <p class="sub">把文件放进本站 <code>dist/</code> 目录，刷新即可</p>
     </div>
     <div class="empty" id="fail" hidden>
       <p id="failTitle">读取 dist 目录失败</p>
@@ -256,16 +222,14 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   </section>
 
   <footer class="ft">
-    <span>点击文件名直接下载 · 列表实时读取仓库 dist 目录</span>
+    <span>点击文件名直接下载 · 列表实时读取本站 dist 目录</span>
     <span class="mono" id="clock"></span>
   </footer>
 </div>
 
 <script>
 (function () {
-  var LS_KEY = 'lfds.repo';
   var DIR = 'dist';
-  var API = 'https://api.github.com/repos/';
 
   var listEl = document.getElementById('list');
   var emptyEl = document.getElementById('empty');
@@ -276,15 +240,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
   var statusTxt = document.getElementById('statusTxt');
   var kCount = document.getElementById('kCount');
   var kSize = document.getElementById('kSize');
-  var kRepo = document.getElementById('kRepo');
   var clock = document.getElementById('clock');
-  var setupEl = document.getElementById('setup');
-  var filesEl = document.getElementById('files');
-  var repoInput = document.getElementById('repoInput');
-  var repoSave = document.getElementById('repoSave');
-  var repoErr = document.getElementById('repoErr');
-
-  var target = { owner: '', repo: '', branch: '' };
 
   function fmtSize(b) {
     if (b < 1024) return b + ' B';
@@ -303,8 +259,69 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     statusTxt.textContent = txt;
   }
 
-  function label() {
-    return target.owner + '/' + target.repo + (target.branch ? ' @ ' + target.branch : '');
+  function fileUrl(name) {
+    return DIR + '/' + encodeURIComponent(name);
+  }
+
+  // 静态目录列表：python -m http.server / nginx autoindex / Apache / Caddy 都是 <a href>
+  function parseListing(html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    var anchors = doc.querySelectorAll('a[href]');
+    var seen = Object.create(null);
+    var files = [];
+
+    Array.prototype.forEach.call(anchors, function (a) {
+      var href = String(a.getAttribute('href') || '').trim();
+      if (!href || href.charAt(0) === '?' || href.charAt(0) === '#') return;
+      if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return;
+      if (/\/$/.test(href)) return;
+      if (href.indexOf('..') >= 0) return;
+
+      var name;
+      try { name = decodeURIComponent(href.split('#')[0].split('?')[0]); } catch (e) { return; }
+      name = name.split('/').filter(Boolean).pop();
+      if (!name || name.charAt(0) === '.') return;
+      if (seen[name]) return;
+
+      seen[name] = 1;
+      files.push({ name: name, size: 0 });
+    });
+
+    files.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh'); });
+    return files;
+  }
+
+  function headSize(name) {
+    return fetch(fileUrl(name), { method: 'HEAD', cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) return 0;
+        var n = Number(r.headers.get('Content-Length'));
+        return isFinite(n) && n > 0 ? n : 0;
+      })
+      .catch(function () { return 0; });
+  }
+
+  function fillSizes(files) {
+    var cursor = 0;
+    function worker() {
+      if (cursor >= files.length) return Promise.resolve();
+      var f = files[cursor++];
+      return headSize(f.name).then(function (s) {
+        f.size = s;
+        return worker();
+      });
+    }
+    var lanes = [];
+    var n = Math.min(6, files.length);
+    for (var i = 0; i < n; i++) lanes.push(worker());
+    return Promise.all(lanes);
+  }
+
+  // links.json 可选：挂在别处的大文件用外链补进来，与目录内文件重名时以实际文件为准
+  function loadLinks() {
+    return fetch('links.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; });
   }
 
   function safeHref(f) {
@@ -314,95 +331,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
         if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
       } catch (e) { /* 非法外链按本地文件处理 */ }
     }
-    return DIR + '/' + encodeURIComponent(f.name);
-  }
-
-  // ---------- 仓库地址解析：owner/repo[@branch]，也接受仓库网址 ----------
-  function parseSpec(raw) {
-    var s = String(raw == null ? '' : raw).trim();
-    if (!s) return null;
-    s = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/^github\.com\//i, '');
-    s = s.replace(/\.git$/i, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
-    var branch = '';
-    var at = s.indexOf('@');
-    if (at > 0) {
-      branch = s.slice(at + 1).trim();
-      s = s.slice(0, at);
-    }
-    var parts = s.split('/').filter(Boolean);
-    if (parts.length < 2) return null;
-    return { owner: parts[0], repo: parts[1], branch: branch };
-  }
-
-  // ---------- 地址推断：页面部署在哪，就知道仓库是谁 ----------
-  function detect() {
-    var host = location.hostname.toLowerCase();
-    var segs = location.pathname.split('/').filter(Boolean);
-
-    var pages = /^([a-z0-9-]+)\.github\.io$/.exec(host);
-    if (pages) {
-      return segs.length
-        ? { owner: pages[1], repo: decodeURIComponent(segs[0]), branch: '' }
-        : { owner: pages[1], repo: pages[1] + '.github.io', branch: '' };
-    }
-
-    if (/^(cdn|fastly|gcore|testingcf)\.jsdelivr\.net$/.test(host) && segs[0] === 'gh') {
-      var ver = String(segs[2] || '').split('@');
-      if (segs[1] && ver[0]) {
-        return {
-          owner: decodeURIComponent(segs[1]),
-          repo: decodeURIComponent(ver[0]),
-          branch: ver[1] && ver[1] !== 'latest' ? ver[1] : ''
-        };
-      }
-    }
-
-    if (/^raw(git|cdn)?\.githack\.com$/.test(host) && segs.length >= 3) {
-      return { owner: segs[0], repo: segs[1], branch: segs[2] };
-    }
-
-    return null;
-  }
-
-  function recall() {
-    try { return parseSpec(localStorage.getItem(LS_KEY)); } catch (e) { return null; }
-  }
-
-  function remember() {
-    try { localStorage.setItem(LS_KEY, label().replace(/ @ /, '@')); } catch (e) { /* 隐私模式忽略 */ }
-  }
-
-  function forget() {
-    try { localStorage.removeItem(LS_KEY); } catch (e) { /* 隐私模式忽略 */ }
-  }
-
-  // ---------- 取列表 ----------
-  function contentsUrl() {
-    var u = API + encodeURIComponent(target.owner) + '/' + encodeURIComponent(target.repo) + '/contents/' + DIR;
-    return target.branch ? u + '?ref=' + encodeURIComponent(target.branch) : u;
-  }
-
-  function fetchFiles() {
-    return fetch(contentsUrl(), { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' })
-      .then(function (r) {
-        if (r.ok) return r.json();
-        if (r.status === 404) throw new Error('仓库或 dist 目录不存在（仓库需要公开）');
-        if (r.status === 403 || r.status === 429) throw new Error('GitHub API 限流，稍后刷新再试');
-        throw new Error('HTTP ' + r.status);
-      })
-      .then(function (data) {
-        if (!Array.isArray(data)) throw new Error('dist 不是一个目录');
-        return data
-          .filter(function (f) { return f.type === 'file' && f.name.charAt(0) !== '.'; })
-          .map(function (f) { return { name: f.name, size: f.size }; });
-      });
-  }
-
-  // links.json 可选：仓库放不下的大文件用外链补进来
-  function loadLinks() {
-    return fetch('links.json', { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .catch(function () { return []; });
+    return fileUrl(f.name);
   }
 
   function showFail(title, sub) {
@@ -443,7 +372,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
       meta.className = 'meta';
       var size = document.createElement('span');
       size.className = 'size';
-      size.textContent = f.size ? fmtSize(f.size) : (f.url ? '外链' : '空文件');
+      size.textContent = f.size ? fmtSize(f.size) : (f.url ? '外链' : '—');
       meta.appendChild(size);
       if (f.url) {
         var extMark = document.createElement('span');
@@ -466,7 +395,7 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
 
   function applyFiles(files) {
     return loadLinks().then(function (links) {
-      var names = {};
+      var names = Object.create(null);
       files.forEach(function (f) { names[f.name] = 1; });
       (Array.isArray(links) ? links : []).forEach(function (l) {
         if (!l || !l.name || !l.url || names[l.name]) return;
@@ -478,69 +407,32 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     });
   }
 
-  function showSetup() {
-    setupEl.hidden = false;
-    filesEl.hidden = true;
-    failEl.hidden = true;
-    emptyEl.hidden = true;
-    listEl.textContent = '';
-    kRepo.textContent = '—';
-    kCount.textContent = '—';
-    kSize.textContent = '—';
-    setStatus('', '待连接');
-  }
-
-  function load(staleFromStorage) {
-    if (!target.owner || !target.repo) {
-      showSetup();
-      return;
-    }
-    setupEl.hidden = true;
-    filesEl.hidden = false;
-    kRepo.textContent = label();
+  function load() {
     setStatus('', '读取中');
 
-    fetchFiles()
+    fetch(DIR + '/', { cache: 'no-store', headers: { Accept: 'text/html' } })
+      .then(function (r) {
+        if (r.ok) return r;
+        if (r.status === 404) throw new Error('找不到 ' + DIR + '/ 目录');
+        throw new Error('HTTP ' + r.status);
+      })
+      .then(function (r) {
+        var type = r.headers.get('Content-Type') || '';
+        if (type.indexOf('text/html') < 0) throw new Error('目录返回的不是列表页');
+        return r.text();
+      })
+      .then(function (html) {
+        if (!/<a[\s>]/i.test(html)) throw new Error('当前静态服务不提供目录列表');
+        var files = parseListing(html);
+        return fillSizes(files).then(function () { return files; });
+      })
       .then(applyFiles)
       .then(function () {
-        setStatus('ok', label());
-        remember();
+        setStatus('ok', DIR + '/');
       })
       .catch(function (e) {
         setStatus('err', '读取失败');
-        showFail('读取 dist 目录失败', e.message);
-        // 记住的仓库已经失效就别再死记住，退回手输
-        if (staleFromStorage) {
-          forget();
-          showSetup();
-          failEl.hidden = true;
-        }
-      });
-  }
-
-  function connect(spec) {
-    var prev = target;
-    target = spec;
-    kRepo.textContent = label();
-    setStatus('', '连接中');
-
-    fetchFiles()
-      .then(function (files) {
-        repoErr.hidden = true;
-        setupEl.hidden = true;
-        filesEl.hidden = false;
-        remember();
-        return applyFiles(files);
-      })
-      .then(function () {
-        setStatus('ok', label());
-      })
-      .catch(function (e) {
-        target = prev;
-        kRepo.textContent = prev.owner ? prev.owner + '/' + prev.repo : '—';
-        repoErr.textContent = e.message;
-        repoErr.hidden = false;
-        setStatus('err', '连接失败');
+        showFail('读取 ' + DIR + '/ 目录失败', e.message);
       });
   }
 
@@ -550,41 +442,8 @@ h1{margin:0;font-size:21px;letter-spacing:.5px;font-weight:650}
     clock.textContent = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
   }
 
-  document.getElementById('reload').addEventListener('click', function () { load(false); });
-
-  repoSave.addEventListener('click', function () {
-    var spec = parseSpec(repoInput.value);
-    if (!spec) {
-      repoErr.textContent = '看不懂这个地址，写成 owner/repo 试试';
-      repoErr.hidden = false;
-      return;
-    }
-    connect(spec);
-  });
-
-  repoInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') repoSave.click();
-  });
-
-  var fromQuery = parseSpec(new URLSearchParams(location.search).get('repo'));
-  var fromStore = fromQuery ? null : recall();
-
-  if (fromQuery) {
-    target = fromQuery;
-    load(false);
-  } else if (fromStore) {
-    target = fromStore;
-    load(true);
-  } else {
-    var guessed = detect();
-    if (guessed) {
-      target = guessed;
-      load(false);
-    } else {
-      showSetup();
-    }
-  }
-
+  document.getElementById('reload').addEventListener('click', load);
+  load();
   tick();
   setInterval(tick, 1000);
 })();
